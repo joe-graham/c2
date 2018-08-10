@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os/exec"
 
@@ -50,8 +49,6 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 		if error != nil {
 			return
 		}
-
-		log.Printf("Handshake successful")
 
 		// Handle incoming connection concurrently
 		go ssh.DiscardRequests(requests)
