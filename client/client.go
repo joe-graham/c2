@@ -3,7 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"log"
+	"net"
 
+	"github.com/armon/go-socks5"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -40,5 +44,46 @@ func main() {
 		return
 	}
 	fmt.Println(b.String())
-	session.Close()
+
+	// Set up tunnel
+	listener, error := client.Listen("tcp", "172.16.65.137:8080")
+	if error != nil {
+		log.Fatal("Failed to set up tunnel: ", error)
+	}
+
+	// Listen for connections on tunnel
+	for {
+
+		tunnel, error := listener.Accept()
+		if error != nil {
+			log.Fatal("Failed to open listener: ", error)
+		}
+		socksConfig := &socks5.Config{}
+		server, error := socks5.New(socksConfig)
+		if error != nil {
+			log.Fatal("Failed to create server config: ", error)
+		}
+
+		socksNet, error := net.Listen("tcp", "localhost:666")
+		if error != nil {
+			log.Fatal("Failed to open SOCKS socket: ", error)
+		}
+
+		if serverError := server.Serve(socksNet); serverError != nil {
+			log.Fatal("Failed to start listening: ", error)
+		}
+
+		socksClient, error := socksNet.Accept()
+		if error != nil {
+			log.Fatal("Failed to accept handoff connection: ", error)
+		}
+		go func() {
+			_, error = io.Copy(tunnel, socksClient)
+			if error != nil {
+				log.Fatal("Error copying: ", error)
+			}
+		}()
+	}
+
+	//session.Close()
 }
