@@ -29,7 +29,7 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 -----END EC PRIVATE KEY-----`
 	privateKey, error := ssh.ParsePrivateKey([]byte(privateKeyString))
 	if error != nil {
-		log.Fatal("Failed to parse private key: ", error)
+		return
 	}
 
 	config.AddHostKey(privateKey)
@@ -37,18 +37,18 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 	// Begin accepting connections
 	listener, error := net.Listen("tcp", "0.0.0.0:900")
 	if error != nil {
-		log.Fatal("Failed to listen for connection: ", error)
+		return
 	}
 	for {
 		newConn, error := listener.Accept()
 		if error != nil {
-			log.Fatal("Failed to accept new connection: ", error)
+			return
 		}
 
 		// When new connection arrives, perform SSH handshake
 		_, channels, requests, error := ssh.NewServerConn(newConn, config)
 		if error != nil {
-			log.Fatal("Failed to handshake: ", error)
+			return
 		}
 
 		log.Printf("Handshake successful")
@@ -65,7 +65,7 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 
 			channel, requests, error := newChannel.Accept()
 			if error != nil {
-				log.Fatal("Could not accept channel:", error)
+				return
 			}
 
 			// There are several types of out-of-band requests, we only want to

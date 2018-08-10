@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -25,20 +24,20 @@ func main() {
 	// Connect to host
 	client, error := ssh.Dial("tcp", "172.16.65.137:443", config)
 	if error != nil {
-		log.Fatal("Failed to connect: ", error)
+		return
 	}
 
 	// Open shell
 	session, error := client.NewSession()
 	if error != nil {
-		log.Fatal("Failed to start session: ", error)
+		return
 	}
 
 	// Run whoami, print results, exit
 	var b bytes.Buffer
 	session.Stdout = &b
 	if error := session.Run("/usr/bin/whoami"); error != nil {
-		log.Fatal("Failed to run: ", error)
+		return
 	}
 	fmt.Println(b.String())
 	session.Close()
