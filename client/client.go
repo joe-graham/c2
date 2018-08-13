@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 
 	"github.com/armon/go-socks5"
 	"golang.org/x/crypto/ssh"
@@ -47,17 +46,17 @@ func main() {
 	// TODO THIS IP MUST BE CHANGED FOR FUTURE WORK
 	listener, error := client.Listen("tcp", "172.16.65.137:8080")
 	if error != nil {
-		log.Fatal("Failed to set up tunnel: ", error)
+		return
 	}
 
 	// Serve proxy over tunnel
 	socksConfig := &socks5.Config{}
 	server, error := socks5.New(socksConfig)
 	if error != nil {
-		log.Fatal("Failed to create server config: ", error)
+		return
 	}
 
 	if serverError := server.Serve(listener); serverError != nil {
-		log.Fatal("Failed to start server over tunnel: ", error)
+		return
 	}
 }
