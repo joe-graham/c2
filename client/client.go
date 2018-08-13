@@ -44,6 +44,7 @@ func main() {
 	fmt.Println(b.String())
 
 	// Set up tunnel
+	// TODO THIS IP MUST BE CHANGED FOR FUTURE WORK
 	listener, error := client.Listen("tcp", "172.16.65.137:8080")
 	if error != nil {
 		log.Fatal("Failed to set up tunnel: ", error)
