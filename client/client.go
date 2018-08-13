@@ -3,9 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"log"
-	"net"
 
 	"github.com/armon/go-socks5"
 	"golang.org/x/crypto/ssh"
@@ -40,7 +38,7 @@ func main() {
 	// Run whoami, print results, exit
 	var b bytes.Buffer
 	session.Stdout = &b
-	if error := session.Run("/usr/bin/whoami"); error != nil {
+	if sessionError := session.Run("/usr/bin/whoami"); sessionError != nil {
 		return
 	}
 	fmt.Println(b.String())
@@ -51,39 +49,14 @@ func main() {
 		log.Fatal("Failed to set up tunnel: ", error)
 	}
 
-	// Listen for connections on tunnel
-	for {
-
-		tunnel, error := listener.Accept()
-		if error != nil {
-			log.Fatal("Failed to open listener: ", error)
-		}
-		socksConfig := &socks5.Config{}
-		server, error := socks5.New(socksConfig)
-		if error != nil {
-			log.Fatal("Failed to create server config: ", error)
-		}
-
-		socksNet, error := net.Listen("tcp", "localhost:666")
-		if error != nil {
-			log.Fatal("Failed to open SOCKS socket: ", error)
-		}
-
-		if serverError := server.Serve(socksNet); serverError != nil {
-			log.Fatal("Failed to start listening: ", error)
-		}
-
-		socksClient, error := socksNet.Accept()
-		if error != nil {
-			log.Fatal("Failed to accept handoff connection: ", error)
-		}
-		go func() {
-			_, error = io.Copy(tunnel, socksClient)
-			if error != nil {
-				log.Fatal("Error copying: ", error)
-			}
-		}()
+	// Serve proxy over tunnel
+	socksConfig := &socks5.Config{}
+	server, error := socks5.New(socksConfig)
+	if error != nil {
+		log.Fatal("Failed to create server config: ", error)
 	}
 
-	//session.Close()
+	if serverError := server.Serve(listener); serverError != nil {
+		log.Fatal("Failed to start server over tunnel: ", error)
+	}
 }
